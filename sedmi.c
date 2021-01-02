@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#define len 50
+#define len 256
 
 typedef struct node *stack;
 typedef struct node
@@ -12,10 +11,9 @@ typedef struct node
 } Node;
 
 stack allocate(void);
-int print(stack);
-int push(float, stack);
+float push(float, stack);
 float pop(stack);
-int read(const char *, stack);
+float read(const char *, stack);
 
 int main()
 {
@@ -23,7 +21,10 @@ int main()
 
     read("postfix.txt", head);
 
-    print(head->next);
+    float x = pop(head);
+    printf("Rezultat operacije iznosi : %.2f\n", x);
+
+    free(head);
 
     return 0;
 }
@@ -44,21 +45,7 @@ stack allocate()
     return newNode;
 }
 
-int print(stack head)
-{
-    while (head != NULL)
-    {
-        printf("%.3g  ", head->element);
-
-        head = head->next;
-    }
-
-    printf("\n");
-
-    return 0;
-}
-
-int push(float x, stack head)
+float push(float x, stack head)
 {
     stack q = allocate();
     q->element = x;
@@ -80,7 +67,7 @@ float pop(stack head)
         printf("Prazan stack\n");
     }
 
-    if (head->next == NULL)
+    if (help->next == NULL)
     {
         free(help);
         return x;
@@ -92,8 +79,11 @@ float pop(stack head)
     return x;
 }
 
-int read(const char *name, stack head)
+float read(const char *name, stack head)
 {
+    int position = 0;
+    float a, b;
+
     FILE *fp = NULL;
     fp = fopen(name, "r");
 
@@ -103,15 +93,69 @@ int read(const char *name, stack head)
         return -1;
     }
 
-    char buffer[len];
+    char *buffer = NULL;
+    buffer = (char *)malloc(len);
 
     fgets(buffer, len, fp);
     fclose(fp);
 
-    char c;
-    int a, b;
+    printf("Postfiks izraz glasi : %s", buffer);
 
-    sscanf(buffer, "%d  %d  %c", &a, &b, &c);
+    while (*buffer != '\0')
+    {
+        float n = 0;
+        sscanf(buffer, "%f%n", &n, &position);
+
+        if (n)
+        {
+            push(n, head);
+            buffer += position;
+        }
+        else
+        {
+            char op;
+            sscanf(buffer, "%c%n", &op, &position);
+
+            buffer += position;
+
+            switch (op)
+            {
+            case '+':
+            {
+                a = pop(head);
+                b = pop(head);
+                push(a + b, head);
+                break;
+            }
+
+            case '-':
+            {
+                a = pop(head);
+                b = pop(head);
+                push(b - a, head);
+                break;
+            }
+
+            case '*':
+            {
+                a = pop(head);
+                b = pop(head);
+                push(a * b, head);
+                break;
+            }
+
+            case '/':
+            {
+                a = pop(head);
+                b = pop(head);
+                push(b / a, head);
+
+                break;
+            }
+            }
+        }
+    }
+    printf("\n");
 
     return 0;
 }
